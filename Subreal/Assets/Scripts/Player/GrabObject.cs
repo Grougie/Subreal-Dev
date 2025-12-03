@@ -9,7 +9,7 @@ public class ObjectGrab : MonoBehaviour
     [Header("Grab Settings")]
     public float grabDistance = 3f;
     public float throwForce = 10f;
-    public LayerMask grabbableLayer;
+    public string grabbableTag = "Grabbable"; 
     public KeyCode grabKey = KeyCode.E;
     public KeyCode throwKey = KeyCode.F;
     public LayerMask playerLayer;
@@ -92,37 +92,50 @@ public class ObjectGrab : MonoBehaviour
     void GrabObject()
     {
         RaycastHit hit;
-        if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, grabDistance, grabbableLayer))
-        {   
-            Debug.Log("Hit object: " + hit.collider.gameObject.name);
-            Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
-            if (rb != null)
+        if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, grabDistance))
+        {  
+            GameObject hitObject = hit.collider.gameObject;
+            Debug.Log("Hit object: " + hitObject.name);
+            
+            if (hitObject.CompareTag(grabbableTag)) 
             {
-                heldObject = hit.collider.gameObject;
-                heldRigidbody = rb;
+                Rigidbody rb = hitObject.GetComponent<Rigidbody>();
+                
+                if (rb != null)
+                {
+                    heldObject = hitObject;
+                    heldRigidbody = rb;
 
-                originalLayer = heldObject.layer;
-
-                heldObject.layer = LayerMask.NameToLayer("Carried"); 
-                
-                heldRigidbody.useGravity = false;
-                heldRigidbody.linearDamping = 10;
-                heldRigidbody.angularDamping = 10;
-                heldRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-                
-                PlaySound(grabSound);
-                
-                isHolding = true;
-                Debug.Log("Grabbed object: " + heldObject.name);
+                    originalLayer = heldObject.layer;
+                    
+                    heldObject.layer = LayerMask.NameToLayer("Carried"); 
+                    
+                    heldRigidbody.useGravity = false;
+                    heldRigidbody.linearDamping = 10;
+                    heldRigidbody.angularDamping = 10;
+                    heldRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                    
+                    PlaySound(grabSound);
+                    
+                    isHolding = true;
+                    Debug.Log("Grabbed object: " + heldObject.name);
+                }
+                else
+                {
+                    Debug.LogWarning("Grabbable object " + hitObject.name + " is missing a Rigidbody!");
+                }
+            }
+            else
+            {
+                Debug.Log("Hit object is not tagged as grabbable.");
             }
         }
         else
         {
-            Debug.Log("No grabbable object in range.");
+            Debug.Log("No object hit in range.");
         }
-    }
-
-    void DropObject()
+    }   
+ void DropObject()
     {
         if (heldObject != null)
         {   
